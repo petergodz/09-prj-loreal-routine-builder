@@ -39,17 +39,24 @@
         </select>
       </div>
 
-      <!-- Products Grid -->
+      <!-- Products Grid (missing container added) -->
       <div id="productsContainer" class="products-grid"></div>
 
-      <!-- Selected Products -->
+      <!-- Selected Products (missing container added) -->
+      <div id="selectedProductsList"></div>
+
+      <!-- Products Grid -->
       <div class="selected-products">
         <h2>Selected Products</h2>
         <div id="selectedProductsList"></div>
         <button id="generateRoutine" class="generate-btn">
-          <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Routine
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          Generate Routine
         </button>
       </div>
+
+      <!-- Products grid will appear here -->
+      <div id="productsContainer" class="products-grid"></div>
 
       <!------- Chat Area ------->
       <section class="chatbox">
@@ -57,10 +64,10 @@
         <div id="chatWindow" class="chat-window"></div>
 
         <form id="chatForm" class="chat-form">
-          <label for="userInput" class="visually-hidden">Message</label>
+          <label for="chatInput" class="visually-hidden">Message</label>
           <input
-            id="userInput"
-            name="userInput"
+            id="chatInput"
+            name="chatInput"
             type="text"
             placeholder="Ask me about products or routines…"
             autocomplete="off"
@@ -86,7 +93,6 @@
     </div>
 
     <!-- secrets.js can be removed when using Cloudflare Workers for API requests -->
-    <script src="secrets.js"></script>
     <script src="script.js"></script>
   </body>
 </html>
