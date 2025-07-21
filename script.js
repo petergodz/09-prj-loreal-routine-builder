@@ -46,15 +46,15 @@ async function fetchProductsByCategory(category) {
 let selectedProductIds = [];
 
 // Load selected products from localStorage if available
-if (localStorage.getItem('selectedProductIds')) {
+if (localStorage.getItem("selectedProductIds")) {
   try {
-    selectedProductIds = JSON.parse(localStorage.getItem('selectedProductIds'));
+    selectedProductIds = JSON.parse(localStorage.getItem("selectedProductIds"));
   } catch (e) {
     selectedProductIds = [];
   }
 }
 // Ensure selected products are shown after reload
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener("DOMContentLoaded", () => {
   updateSelectedProducts();
 });
 
@@ -123,7 +123,10 @@ function displayProducts(products) {
         productCard.classList.remove("selected");
       }
       // Save to localStorage
-      localStorage.setItem('selectedProductIds', JSON.stringify(selectedProductIds));
+      localStorage.setItem(
+        "selectedProductIds",
+        JSON.stringify(selectedProductIds)
+      );
       updateSelectedProducts();
     });
     productsContainer.appendChild(productCard);
@@ -166,7 +169,10 @@ function updateSelectedProducts(products) {
           btn.onclick = () => {
             selectedProductIds = selectedProductIds.filter((i) => i !== id);
             // Save to localStorage
-            localStorage.setItem('selectedProductIds', JSON.stringify(selectedProductIds));
+            localStorage.setItem(
+              "selectedProductIds",
+              JSON.stringify(selectedProductIds)
+            );
             updateSelectedProducts();
             // Re-render product cards to update selection state
             document.querySelectorAll(".product-card").forEach((card) => {
@@ -211,7 +217,7 @@ categoryFilter.addEventListener("change", async function () {
 // Make sure secrets.js is linked in index.html before script.js
 
 // Function to send a message to OpenAI
-// Function to send a message to OpenAI via Cloudflare Worker
+// Function to send a message to OpenAI
 async function sendMessageToOpenAI(newMessages) {
   // Add user message to history and show loading
   chatHistory.push({
@@ -220,51 +226,93 @@ async function sendMessageToOpenAI(newMessages) {
   });
   renderChatHistory();
   chatWindow.innerHTML += "<div class='chat-loading'>Loading response...</div>";
+
   try {
-    // Always send the full chat history for context
-    const response = await fetch("https://loreal2.pgodziela.workers.dev/", {
+    // Get the user input from the last message
+    const user_input = newMessages[newMessages.length - 1].content;
+
+    // Make direct API call to OpenAI using gpt-4o model
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json",
-        // No Authorization header needed!
       },
       body: JSON.stringify({
-        model: "gpt-4o", // Use gpt-4o model
-        messages: chatHistory,
+        model: "gpt-4o", // Using gpt-4o as specified in coding instructions
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a L'Oréal Smart Routine and Product Advisor. Tailor all your responses to be about providing fantastic customer service for the L'Oréal brand providing advice about their products and services especially in the context of providing routine and product recommendations. If the user submit queries about topics unrelated to L'Oréal, beauty products, or beauty routine advice, politely indicate that you cannot answer those queries in a cheerful manner.",
+          },
+          {
+            role: "user",
+            content: user_input,
+          },
+        ],
       }),
     });
+
+    // Convert response to JSON
     const data = await response.json();
-    // Check for response content
+
+    // Log the response to help with debugging
+    console.log("OpenAI API response:", data);
+
+    // Check if the response has an error
+    if (data.error) {
+      throw new Error(data.error.message || "OpenAI API error");
+    }
+
+    // Check for response content using the correct format
     if (
       data.choices &&
       data.choices[0] &&
       data.choices[0].message &&
       data.choices[0].message.content
     ) {
+      // Add assistant response to chat history
       chatHistory.push({
         role: "assistant",
         content: data.choices[0].message.content,
       });
       renderChatHistory();
     } else {
+      // Show more helpful error message
       chatHistory.push({
         role: "assistant",
-        content: "No response from OpenAI.",
+        content:
+          "Sorry, I couldn't get a response. Please check your API key and try again.",
       });
       renderChatHistory();
     }
   } catch (error) {
-    chatHistory.push({ role: "assistant", content: `Error: ${error.message}` });
+    // Show detailed error message to help with debugging
+    console.error("Error calling OpenAI API:", error);
+    chatHistory.push({
+      role: "assistant",
+      content: `Error: ${error.message}. Please check the browser console for more details.`,
+    });
     renderChatHistory();
   }
 }
 
 // Chat form submission handler
-
 chatForm.addEventListener("submit", async (e) => {
   e.preventDefault();
+
   // Get user input from the chat form
   const userInput = document.getElementById("chatInput").value;
+
+  // Don't send empty messages
+  if (!userInput.trim()) {
+    return;
+  }
+
+  // Clear the input field after getting the value
+  document.getElementById("chatInput").value = "";
+
   // Create messages array for OpenAI
   const messages = [
     {
@@ -273,6 +321,7 @@ chatForm.addEventListener("submit", async (e) => {
     },
     { role: "user", content: userInput },
   ];
+
   // Send message to OpenAI and show response
   await sendMessageToOpenAI(messages);
 });
@@ -299,10 +348,11 @@ generateRoutineBtn.addEventListener("click", async () => {
     {
       role: "system",
       content:
-        "You are a helpful assistant for L'Oréal product advice. Suggest a step-by-step routine using the provided products.",
+        "You are a L'Oréal Smart Routine and Product Advisor. Suggest a step-by-step routine using the provided products.",
     },
     { role: "user", content: userMessage },
   ];
+
   // Send message to OpenAI and show response
   await sendMessageToOpenAI(messages);
 });
